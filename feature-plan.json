@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "current_feature": "core-skeleton",
+  "features": [
+    {
+      "id": "core-skeleton",
+      "title": "Core FastAPI/React skeleton with install instructions and tests",
+      "status": "done",
+      "acceptance": [
+        "FastAPI backend runs and serves API",
+        "React frontend builds and loads",
+        "Install instructions in README",
+        "Basic test suite passes"
+      ],
+      "implementation": [
+        "backend/main.py",
+        "backend/requirements.txt",
+        "backend/test_main.py",
+        "frontend/package.json",
+        "frontend/public/index.html",
+        "frontend/src/index.js",
+        "frontend/src/App.js",
+        "frontend/src/App.css",
+        "frontend/setupProxy.js",
+        "README.md",
+        "PLAN.md",
+        "STATUS.md",
+        "CHANGELOG.md"
+      ],
+      "tests": [
+        "backend/test_main.py"
+      ]
+    },
+    {
+      "id": "context-resolver",
+      "title": "Configurable PRODUCT.md and DESIGN.md paths across Context, Live Mode, and design tooling",
+      "status": "planned",
+      "acceptance": [
+        "Independent per-document path configuration",
+        "Shared resolution across context, live, and design commands",
+        "Path validation with clear errors",
+        "Backward compatibility with discovery conventions"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "gitignore-cleanup",
+      "title": "Guidance on .gitignore during init and cleanup command",
+      "status": "planned",
+      "acceptance": [
+        ".gitignore instructions during init",
+        "Clean command removes stale generated files",
+        "Works with worktrees"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "staleness-fingerprint",
+      "title": "SHA-256 fingerprint for DESIGN.md sidecar staleness detection",
+      "status": "planned",
+      "acceptance": [
+        "Fingerprint recorded during generation/review",
+        "Content-based comparison instead of mtime",
+        "Legacy sidecars handled gracefully",
+        "Tests for checkout/worktree scenarios"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "engine-binary-verification",
+      "title": "Independent integrity verification for engine binary downloads",
+      "status": "planned",
+      "acceptance": [
+        "Ed25519 signature verification for engine binary",
+        "Re-verification of cached binaries",
+        "Configurable download source with verification",
+        "Release tag synchronization"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "rtl-audit",
+      "title": "Audit: flag physical CSS properties on RTL pages",
+      "status": "planned",
+      "acceptance": [
+        "Sixth Internationalization audit section",
+        "Flags physical properties on RTL pages",
+        "Informational on LTR pages",
+        "Score rescaling from /20 to /24"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "background-cascade-fix",
+      "title": "Static cascade: reset background-color for image-only shorthands",
+      "status": "planned",
+      "acceptance": [
+        "Color reset for background shorthand with image but no color",
+        "Hover pass handles reset correctly",
+        "Gradient shorthands handled",
+        "Golden tests updated"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "vue-preview-accept",
+      "title": "Vue preview mode: Svelte-parity accept path",
+      "status": "planned",
+      "acceptance": [
+        "Param values threaded through Vue accept",
+        "CSS sanitization for Vue (scoped, dedupe, param baking)",
+        "Fixtures for non-happy style-block shapes",
+        "Variant zero validation"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "extension-copy-issues",
+      "title": "Browser extension: copy all detected issues",
+      "status": "planned",
+      "acceptance": [
+        "Copy all issues action in popup",
+        "Markdown output with URL, count, issues, selectors, guidance",
+        "Copy confirmation"
+      ],
+      "implementation": [],
+      "tests": []
+    }
+  ]
+}
