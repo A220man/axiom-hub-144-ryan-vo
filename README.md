@@ -35,14 +35,18 @@ axiom-hub-144-ryan-vo/
 ├── backend/
 │   ├── main.py
 │   ├── requirements.txt
-│   └── test_main.py
+│   ├── test_main.py
+│   ├── context_resolver.py
+│   ├── test_context_resolver.py
+│   └── test_api_context.py
 ├── frontend/
 │   ├── package.json
 │   ├── public/index.html
-│   └── src/
-│       ├── index.js
-│       ├── App.js
-│       └── App.css
+│   ├── src/
+│   │   ├── index.js
+│   │   ├── App.js
+│   │   └── App.css
+│   └── setupProxy.js
 └── tests/
 ```
 
@@ -50,7 +54,10 @@ axiom-hub-144-ryan-vo/
 
 - GET /api/health - Health check
 - GET /api/version - Version info
-
+- GET /api/context/resolve - Resolve PRODUCT.md and DESIGN.md paths
+- GET /api/context/validate - Validate context configuration
+- GET /api/context/config - Get current context configuration
+- POST /api/context/config - Create context configuration
 ## Development
 
 Incremental development. See feature-plan.json and PLAN.md.

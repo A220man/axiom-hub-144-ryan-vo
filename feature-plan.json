@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "core-skeleton",
+  "current_feature": "context-resolver",
   "features": [
     {
       "id": "core-skeleton",
@@ -34,15 +34,23 @@
     {
       "id": "context-resolver",
       "title": "Configurable PRODUCT.md and DESIGN.md paths across Context, Live Mode, and design tooling",
-      "status": "planned",
+      "status": "done",
       "acceptance": [
         "Independent per-document path configuration",
         "Shared resolution across context, live, and design commands",
         "Path validation with clear errors",
         "Backward compatibility with discovery conventions"
       ],
-      "implementation": [],
-      "tests": []
+      "implementation": [
+        "backend/context_resolver.py",
+        "backend/main.py",
+        "frontend/src/App.js",
+        "frontend/src/App.css"
+      ],
+      "tests": [
+        "backend/test_context_resolver.py",
+        "backend/test_api_context.py"
+      ]
     },
     {
       "id": "gitignore-cleanup",

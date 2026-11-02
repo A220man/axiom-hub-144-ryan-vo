@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-core-skeleton
+context-resolver
 
 ## Roadmap
 
@@ -24,13 +24,17 @@ Tests: `backend/test_main.py`
 
 ### context-resolver — Configurable PRODUCT.md and DESIGN.md paths across Context, Live Mode, and design tooling
 
-Status: planned
+Status: done
 
 Acceptance:
 - Independent per-document path configuration
 - Shared resolution across context, live, and design commands
 - Path validation with clear errors
 - Backward compatibility with discovery conventions
+
+Implementation: `backend/context_resolver.py`, `backend/main.py`, `frontend/src/App.js`, `frontend/src/App.css`
+
+Tests: `backend/test_context_resolver.py`, `backend/test_api_context.py`
 
 ### gitignore-cleanup — Guidance on .gitignore during init and cleanup command
 
