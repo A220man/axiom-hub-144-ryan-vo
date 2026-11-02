@@ -1,6 +1,22 @@
 # Changelog
 
-## 1.0.0 — work-in-progress checkpoint
+## 1.1.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.1.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.2.0 — work-in-progress checkpoint
+
+### Added
+- Context resolver for configurable PRODUCT.md and DESIGN.md paths
+- New API endpoints: `/api/context/resolve`, `/api/context/validate`, `/api/context/config`
+- Context resolution display in frontend
+- Comprehensive test suite for context resolver (32 tests)
+
+## 1.1.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
 
