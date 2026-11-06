@@ -3,6 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pathlib import Path
 from context_resolver import ContextResolver, ContextFilesConfig, create_default_config
+from gitignore_manager import (
+    GitignoreManager,
+    IgnoreCategory,
+    CleanResult,
+    create_gitignore_manager,
+)
 
 
 class ContextConfigRequest(BaseModel):
@@ -10,11 +16,23 @@ class ContextConfigRequest(BaseModel):
     design: str | None = None
 
 
+class GitignoreInitRequest(BaseModel):
+    categories: list[str] | None = None
+    auto_add: bool = False
+
+
+class GitignoreCleanRequest(BaseModel):
+    categories: list[str] | None = None
+    dry_run: bool = False
+    include_worktrees: bool = False
+
+
 class ContextValidationResponse(BaseModel):
     valid: bool
     errors: list[str]
     warnings: list[str]
     paths: dict[str, str | None]
+
 
 
 app = FastAPI(title="Axiom Hub", description="The design language that makes your AI harness better at design")
@@ -81,3 +99,65 @@ async def get_context_config():
     resolver = get_resolver()
     config = resolver.get_config()
     return config.to_dict()
+
+
+def get_gitignore_manager() -> GitignoreManager:
+    """Get a gitignore manager for the current project."""
+    return create_gitignore_manager(get_project_root())
+
+
+@app.get("/api/gitignore/init")
+async def gitignore_init():
+    """Get .gitignore initialization instructions."""
+    manager = get_gitignore_manager()
+    return manager.generate_init_instructions()
+
+
+@app.post("/api/gitignore/init")
+async def gitignore_init_add(request: GitignoreInitRequest):
+    """Add missing .gitignore entries."""
+    manager = get_gitignore_manager()
+    categories = None
+    if request.categories:
+        try:
+            categories = [IgnoreCategory(c) for c in request.categories]
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid category: {e}")
+    
+    added = manager.add_missing_entries(categories)
+    return {
+        "added": [{"pattern": e.pattern, "description": e.description, "category": e.category.value} for e in added],
+        "count": len(added),
+    }
+
+
+@app.get("/api/gitignore/status")
+async def gitignore_status():
+    """Get .gitignore status."""
+    manager = get_gitignore_manager()
+    return manager.get_status()
+
+
+@app.post("/api/gitignore/clean")
+async def gitignore_clean(request: GitignoreCleanRequest):
+    """Clean generated files matching .gitignore patterns."""
+    manager = get_gitignore_manager()
+    categories = None
+    if request.categories:
+        try:
+            categories = [IgnoreCategory(c) for c in request.categories]
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid category: {e}")
+    
+    result = manager.clean_generated_files(
+        categories=categories,
+        dry_run=request.dry_run,
+        include_worktrees=request.include_worktrees,
+    )
+    return {
+        "removed_files": [str(p) for p in result.removed_files],
+        "removed_dirs": [str(p) for p in result.removed_dirs],
+        "errors": result.errors,
+        "bytes_freed": result.bytes_freed,
+        "dry_run": request.dry_run,
+    }

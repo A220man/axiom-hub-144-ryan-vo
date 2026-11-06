@@ -1,10 +1,19 @@
 # Changelog
 
-## 1.1.0 — work-in-progress checkpoint
+## 1.2.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
 
-## 1.1.0 — work-in-progress checkpoint
+## 1.3.0 — work-in-progress checkpoint
+
+### Added
+- Gitignore manager for .gitignore guidance during init and cleanup
+- New API endpoints: `/api/gitignore/init`, `/api/gitignore/status`, `/api/gitignore/clean`
+- Gitignore management UI in frontend with dry-run and worktree support
+- Comprehensive test suite for gitignore manager (20 tests)
+- Worktree-aware cleanup for generated files
+
+## 1.2.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
 
