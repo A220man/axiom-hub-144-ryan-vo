@@ -10,6 +10,8 @@ from pathlib import Path
 import pytest
 
 from context_resolver import (
+    DesignSidecar,
+    StalenessResult,
     ContextFilesConfig,
     ResolvedPaths,
     ContextResolver,
@@ -282,3 +284,308 @@ class TestCreateDefaultConfig:
             data = json.load(f)
         assert data["contextFiles"]["product"] == "governance/product.md"
         assert data["contextFiles"]["design"] == "docs/design.md"
+
+
+class TestDesignSidecar:
+    """Tests for DesignSidecar dataclass."""
+
+    def test_default_sidecar(self):
+        sidecar = DesignSidecar()
+        assert sidecar.schema_version == 2
+        assert sidecar.design_fingerprint is None
+        assert sidecar.generated_at is None
+
+    def test_sidecar_with_data(self):
+        sidecar = DesignSidecar(
+            schema_version=2,
+            design_fingerprint="abc123",
+            generated_at="2024-01-01T00:00:00Z",
+        )
+        assert sidecar.design_fingerprint == "abc123"
+        assert sidecar.generated_at == "2024-01-01T00:00:00Z"
+
+    def test_to_dict(self):
+        sidecar = DesignSidecar(
+            schema_version=2,
+            design_fingerprint="abc123",
+            generated_at="2024-01-01T00:00:00Z",
+        )
+        data = sidecar.to_dict()
+        assert data == {
+            "schemaVersion": 2,
+            "designFingerprint": "abc123",
+            "generatedAt": "2024-01-01T00:00:00Z",
+        }
+
+    def test_from_dict(self):
+        data = {
+            "schemaVersion": 2,
+            "designFingerprint": "abc123",
+            "generatedAt": "2024-01-01T00:00:00Z",
+        }
+        sidecar = DesignSidecar.from_dict(data)
+        assert sidecar.schema_version == 2
+        assert sidecar.design_fingerprint == "abc123"
+        assert sidecar.generated_at == "2024-01-01T00:00:00Z"
+
+    def test_from_dict_legacy(self):
+        """Test loading legacy sidecar without fingerprint."""
+        data = {"schemaVersion": 1}
+        sidecar = DesignSidecar.from_dict(data)
+        assert sidecar.schema_version == 1
+        assert sidecar.design_fingerprint is None
+        assert sidecar.generated_at is None
+
+
+class TestStalenessResult:
+    """Tests for StalenessResult class."""
+
+    def test_stale_result(self):
+        result = StalenessResult(
+            stale=True,
+            reason="Content changed",
+            has_fingerprint=True,
+            current_fingerprint="new",
+            stored_fingerprint="old",
+        )
+        assert result.stale is True
+        assert result.reason == "Content changed"
+        assert result.has_fingerprint is True
+
+    def test_not_stale_result(self):
+        result = StalenessResult(
+            stale=False,
+            reason="Fingerprints match",
+            has_fingerprint=True,
+            current_fingerprint="same",
+            stored_fingerprint="same",
+        )
+        assert result.stale is False
+
+    def test_to_dict(self):
+        result = StalenessResult(
+            stale=True,
+            reason="Content changed",
+            has_fingerprint=True,
+            current_fingerprint="new",
+            stored_fingerprint="old",
+        )
+        data = result.to_dict()
+        assert data["stale"] is True
+        assert data["reason"] == "Content changed"
+        assert data["has_fingerprint"] is True
+        assert data["current_fingerprint"] == "new"
+        assert data["stored_fingerprint"] == "old"
+
+
+class TestStalenessFingerprint:
+    """Tests for staleness detection with SHA-256 fingerprints."""
+
+    def setup_method(self):
+        """Create a temporary directory for each test."""
+        self.temp_dir = Path(tempfile.mkdtemp())
+        self.project_root = self.temp_dir / "project"
+        self.project_root.mkdir()
+        self.resolver = ContextResolver(self.project_root)
+
+    def teardown_method(self):
+        """Clean up temporary directory."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_compute_fingerprint(self):
+        """Test SHA-256 fingerprint computation."""
+        design_path = self.project_root / "DESIGN.md"
+        design_path.write_text("# Design\n\nContent here.")
+        
+        fingerprint = self.resolver.compute_fingerprint(design_path)
+        assert len(fingerprint) == 64  # SHA-256 hex digest
+        assert all(c in "0123456789abcdef" for c in fingerprint)
+
+    def test_compute_fingerprint_normalizes_line_endings(self):
+        """Test that line endings are normalized to LF."""
+        design_path = self.project_root / "DESIGN.md"
+        # Write with CRLF
+        design_path.write_bytes(b"# Design\r\n\r\nContent\r\nhere.")
+        
+        fingerprint_lf = self.resolver.compute_fingerprint(design_path)
+        
+        # Write same content with LF
+        design_path.write_bytes(b"# Design\n\nContent\nhere.")
+        
+        fingerprint_crlf = self.resolver.compute_fingerprint(design_path)
+        
+        assert fingerprint_lf == fingerprint_crlf
+
+    def test_compute_fingerprint_different_content(self):
+        """Test that different content produces different fingerprints."""
+        design_path1 = self.project_root / "DESIGN1.md"
+        design_path2 = self.project_root / "DESIGN2.md"
+        design_path1.write_text("# Design\n\nContent A.")
+        design_path2.write_text("# Design\n\nContent B.")
+        
+        fp1 = self.resolver.compute_fingerprint(design_path1)
+        fp2 = self.resolver.compute_fingerprint(design_path2)
+        
+        assert fp1 != fp2
+
+    def test_save_and_load_sidecar(self):
+        """Test saving and loading sidecar with fingerprint."""
+        design_path = self.project_root / "DESIGN.md"
+        design_path.write_text("# Design\n\nOriginal content.")
+        
+        sidecar = self.resolver.save_sidecar(design_path)
+        
+        assert sidecar.design_fingerprint is not None
+        assert len(sidecar.design_fingerprint) == 64
+        assert sidecar.generated_at is not None
+        
+        # Load and verify
+        loaded = self.resolver.load_sidecar()
+        assert loaded is not None
+        assert loaded.design_fingerprint == sidecar.design_fingerprint
+        assert loaded.generated_at == sidecar.generated_at
+        assert loaded.schema_version == 2
+
+    def test_check_staleness_no_design_file(self):
+        """Test staleness check when DESIGN.md doesn't exist."""
+        result = self.resolver.check_design_staleness()
+        assert result.stale is False
+        assert result.reason == "DESIGN.md not found"
+        assert result.has_fingerprint is False
+
+    def test_check_staleness_no_sidecar(self):
+        """Test staleness check when sidecar doesn't exist."""
+        design_path = self.project_root / "DESIGN.md"
+        design_path.write_text("# Design")
+        
+        result = self.resolver.check_design_staleness(design_path)
+        assert result.stale is False
+        assert result.reason == "No sidecar found"
+        assert result.has_fingerprint is False
+
+    def test_check_staleness_legacy_sidecar_no_fingerprint(self):
+        """Test staleness check with legacy sidecar (no fingerprint) -> unverified, not stale."""
+        design_path = self.project_root / "DESIGN.md"
+        design_path.write_text("# Design\n\nContent.")
+        
+        # Create legacy sidecar without fingerprint
+        sidecar_path = self.project_root / ".impeccable" / "design.json"
+        sidecar_path.parent.mkdir(parents=True)
+        sidecar_path.write_text(json.dumps({"schemaVersion": 1}))
+        
+        result = self.resolver.check_design_staleness(design_path, sidecar_path)
+        assert result.stale is False
+        assert result.has_fingerprint is False
+        assert "unverified" in result.reason.lower()
+        assert result.current_fingerprint is not None
+        assert result.stored_fingerprint is None
+
+    def test_check_staleness_matching_fingerprints(self):
+        """Test staleness check when fingerprints match (not stale)."""
+        design_path = self.project_root / "DESIGN.md"
+        design_path.write_text("# Design\n\nStable content.")
+        
+        # Save sidecar with fingerprint
+        self.resolver.save_sidecar(design_path)
+        
+        # Check staleness - should not be stale
+        result = self.resolver.check_design_staleness(design_path)
+        assert result.stale is False
+        assert result.reason == "Fingerprints match"
+        assert result.has_fingerprint is True
+        assert result.current_fingerprint == result.stored_fingerprint
+
+    def test_check_staleness_changed_content(self):
+        """Test staleness check when DESIGN.md content changed (stale)."""
+        design_path = self.project_root / "DESIGN.md"
+        design_path.write_text("# Design\n\nOriginal content.")
+        
+        # Save sidecar
+        self.resolver.save_sidecar(design_path)
+        
+        # Modify DESIGN.md content
+        design_path.write_text("# Design\n\nModified content.")
+        
+        # Check staleness - should be stale
+        result = self.resolver.check_design_staleness(design_path)
+        assert result.stale is True
+        assert "changed" in result.reason.lower()
+        assert result.has_fingerprint is True
+        assert result.current_fingerprint != result.stored_fingerprint
+
+    def test_check_staleness_checkout_scenario(self):
+        """Test staleness check simulates checkout/worktree: same content, newer mtime."""
+        design_path = self.project_root / "DESIGN.md"
+        design_path.write_text("# Design\n\nContent for checkout test.")
+        
+        # Save sidecar (simulates generation)
+        self.resolver.save_sidecar(design_path)
+        
+        # Simulate checkout: touch DESIGN.md to give it newer mtime
+        # but KEEP the same content
+        import time
+        time.sleep(0.01)  # Ensure mtime changes
+        design_path.write_text("# Design\n\nContent for checkout test.")  # Same content
+        
+        # Check staleness - should NOT be stale (content unchanged)
+        result = self.resolver.check_design_staleness(design_path)
+        assert result.stale is False
+        assert result.reason == "Fingerprints match"
+        assert result.has_fingerprint is True
+
+    def test_check_staleness_restored_content(self):
+        """Test staleness check when content is restored to original."""
+        design_path = self.project_root / "DESIGN.md"
+        design_path.write_text("# Design\n\nOriginal content.")
+        
+        # Save sidecar
+        self.resolver.save_sidecar(design_path)
+        
+        # Modify content
+        design_path.write_text("# Design\n\nModified content.")
+        
+        # Verify it's stale
+        result = self.resolver.check_design_staleness(design_path)
+        assert result.stale is True
+        
+        # Restore original content
+        design_path.write_text("# Design\n\nOriginal content.")
+        
+        # Check again - should not be stale
+        result = self.resolver.check_design_staleness(design_path)
+        assert result.stale is False
+        assert result.reason == "Fingerprints match"
+
+    def test_check_staleness_malformed_sidecar(self):
+        """Test staleness check with malformed sidecar JSON."""
+        design_path = self.project_root / "DESIGN.md"
+        design_path.write_text("# Design")
+        
+        # Create malformed sidecar
+        sidecar_path = self.project_root / ".impeccable" / "design.json"
+        sidecar_path.parent.mkdir(parents=True)
+        sidecar_path.write_text("not valid json")
+        
+        result = self.resolver.check_design_staleness(design_path, sidecar_path)
+        assert result.stale is False
+        assert result.reason == "No sidecar found"
+
+    def test_sidecar_custom_path(self):
+        """Test sidecar operations with custom path."""
+        design_path = self.project_root / "DESIGN.md"
+        design_path.write_text("# Design")
+        
+        custom_sidecar = self.project_root / "custom" / "design.json"
+        custom_sidecar.parent.mkdir(parents=True)
+        
+        # Save to custom path
+        sidecar = self.resolver.save_sidecar(design_path, custom_sidecar)
+        
+        # Load from custom path
+        loaded = self.resolver.load_sidecar(custom_sidecar)
+        assert loaded is not None
+        assert loaded.design_fingerprint == sidecar.design_fingerprint
+        
+        # Check staleness with custom path
+        result = self.resolver.check_design_staleness(design_path, custom_sidecar)
+        assert result.stale is False

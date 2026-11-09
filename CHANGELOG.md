@@ -1,8 +1,20 @@
 # Changelog
 
-## 1.2.0 — work-in-progress checkpoint
+## 1.3.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.3.0 — work-in-progress checkpoint
+
+### Added
+- SHA-256 fingerprint for DESIGN.md sidecar staleness detection (staleness-fingerprint)
+  - `ContextResolver.compute_fingerprint()` for content-based SHA-256 hashing with line-ending normalization
+  - `DesignSidecar` dataclass with schema version, fingerprint, and generation timestamp
+  - `StalenessResult` class for detailed staleness check results
+  - `save_sidecar()` to generate and persist sidecar with fingerprint
+  - `check_design_staleness()` for content-based comparison (replaces mtime-based)
+  - Legacy sidecars without fingerprints treated as "unverified" (not stale)
+  - Comprehensive test coverage (21 new tests) including checkout/worktree scenarios
 
 ## 1.3.0 — work-in-progress checkpoint
 
@@ -12,10 +24,6 @@ Partial code published for continued development. Known issues: STATUS.md.
 - Gitignore management UI in frontend with dry-run and worktree support
 - Comprehensive test suite for gitignore manager (20 tests)
 - Worktree-aware cleanup for generated files
-
-## 1.2.0 — work-in-progress checkpoint
-
-Partial code published for continued development. Known issues: STATUS.md.
 
 ## 1.2.0 — work-in-progress checkpoint
 
