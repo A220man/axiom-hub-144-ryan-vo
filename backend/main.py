@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pathlib import Path
-from context_resolver import ContextResolver, ContextFilesConfig, create_default_config
+from typing import Optional
+from context_resolver import ContextResolver, ContextFilesConfig, create_default_config, DesignSidecar, StalenessResult
 from gitignore_manager import (
     GitignoreManager,
     IgnoreCategory,
