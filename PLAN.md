@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-staleness-fingerprint
+engine-binary-verification
 
 ## Roadmap
 
@@ -65,7 +65,7 @@ Tests: `backend/test_context_resolver.py`
 
 ### engine-binary-verification — Independent integrity verification for engine binary downloads
 
-Status: planned
+Status: done
 
 Acceptance:
 - Ed25519 signature verification for engine binary

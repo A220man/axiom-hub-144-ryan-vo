@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "staleness-fingerprint",
+  "current_feature": "engine-binary-verification",
   "features": [
     {
       "id": "core-skeleton",
@@ -90,7 +90,7 @@
     {
       "id": "engine-binary-verification",
       "title": "Independent integrity verification for engine binary downloads",
-      "status": "planned",
+      "status": "done",
       "acceptance": [
         "Ed25519 signature verification for engine binary",
         "Re-verification of cached binaries",
