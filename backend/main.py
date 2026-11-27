@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 from context_resolver import ContextResolver, ContextFilesConfig, create_default_config, DesignSidecar, StalenessResult
 from gitignore_manager import (
     GitignoreManager,
@@ -45,6 +45,32 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+class RtlAuditViolation(BaseModel):
+    """A single physical CSS property violation on an RTL page."""
+    property: str = Field(..., description="CSS property name")
+    element: str = Field(..., description="CSS selector or element description")
+    value: str = Field(..., description="The property value")
+    severity: str = Field(..., description="violation | informational")
+
+
+class RtlAuditRequest(BaseModel):
+    """Request body for RTL audit."""
+    html: str = Field(..., description="Full HTML of the page to audit")
+    dir_rtl: bool = Field(False, description="Whether the page declares dir='rtl'")
+    include_ltr_info: bool = Field(True, description="Whether to include informational LTR warnings")
+
+
+class RtlAuditResponse(BaseModel):
+    """Response from RTL audit."""
+    violations: List[RtlAuditViolation] = Field(..., description="Physical CSS property violations on RTL page")
+    score: int = Field(..., description="Score out of 24 (was 20 before adding Internationalization section)")
+    max_score: int = Field(24, description="Maximum possible score")
+    has_rtl: bool = Field(..., description="Whether the page declares dir='rtl'")
+    section: str = Field("Internationalization", description="Audit section name")
+
 
 
 def get_project_root() -> Path:
@@ -162,3 +188,22 @@ async def gitignore_clean(request: GitignoreCleanRequest):
         "bytes_freed": result.bytes_freed,
         "dry_run": request.dry_run,
     }
+
+
+@app.post("/api/audit/rtl")
+async def rtl_audit(request: RtlAuditRequest):
+    """Audit CSS for physical properties on RTL pages.
+    
+    Flags physical CSS properties (margin-*, padding-*, border-*, text-align, float, left/right)
+    that should use logical properties when dir="rtl" is declared.
+    
+    Returns violations, a score out of 24, and informational warnings for LTR-only pages.
+    """
+    import rtl_audit_check
+    result = rtl_audit_check.audit_rtl_css(
+        html=request.html,
+        dir_rtl=request.dir_rtl,
+        include_ltr_info=request.include_ltr_info
+    )
+    return RtlAuditResponse(**result)
+

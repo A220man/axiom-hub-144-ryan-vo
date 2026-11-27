@@ -103,7 +103,7 @@
     {
       "id": "rtl-audit",
       "title": "Audit: flag physical CSS properties on RTL pages",
-      "status": "planned",
+      "status": "in_progress",
       "acceptance": [
         "Sixth Internationalization audit section",
         "Flags physical properties on RTL pages",

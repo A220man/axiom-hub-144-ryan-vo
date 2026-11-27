@@ -75,7 +75,7 @@ Acceptance:
 
 ### rtl-audit — Audit: flag physical CSS properties on RTL pages
 
-Status: planned
+Status: in_progress
 
 Acceptance:
 - Sixth Internationalization audit section
